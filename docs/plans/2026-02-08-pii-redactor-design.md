@@ -8,9 +8,10 @@ A DSPy program that takes a sentence and redacts PII using type labels. Uses Gem
 
 All code lives in `main.py`. Three components:
 
-1. **`PIIEntity`** — DSPy-compatible structured output for identified PII (value + label pairs).
-2. **`PIIRedactor`** — DSPy `Module` using `ChainOfThought`. The LLM first identifies all PII entities as a list of `(value, label)` pairs, then produces the redacted sentence with `[LABEL]` placeholders.
-3. **`redact(text: str) -> str`** — Public function that loads `GOOGLE_API_KEY` from `.env`, configures `dspy.LM` with `gemini/gemini-2.0-flash`, runs the module, and returns the redacted string.
+1. **`PIIEntity`** — Pydantic `BaseModel` for identified PII (value + label pairs).
+2. **`IdentifyPII`** — DSPy `Signature` defining inputs (`text`) and outputs (`entities: list[PIIEntity]`, `redacted_text: str`).
+3. **`PIIRedactor`** — DSPy `Module` using `ChainOfThought(IdentifyPII)`. The LLM first identifies all PII entities, then produces the redacted sentence with `[LABEL]` placeholders.
+4. **`redact(text: str) -> str`** — Public function that loads `GOOGLE_API_KEY` from `.env`, configures `dspy.LM` with `gemini/gemini-2.0-flash`, runs the module, and returns the redacted string.
 
 ## Dependencies
 
@@ -50,7 +51,7 @@ Output: "Call [GIVENNAME1] [LASTNAME1] at [TEL] or [EMAIL]"
 
 ## Interface
 
-Python function only (no CLI):
+Python API and CLI:
 
 ```python
 from main import redact
@@ -58,9 +59,26 @@ from main import redact
 result = redact("Call John Smith at 555-123-4567 or john@example.com")
 ```
 
+```sh
+uv run python main.py "Call John Smith at 555-123-4567"
+```
+
 ## Examples
 
-20+ hand-crafted DSPy examples will be included in the module covering all label types. These serve as static few-shot demos and can later be replaced by optimizer-selected examples.
+25 hand-crafted DSPy examples are included in `main.py` covering all label types. These serve as static few-shot demos and can later be replaced by optimizer-selected examples.
+
+## Tests
+
+Split into two directories:
+
+- **`tests/unit/`** — structural validation (no API calls): data model, example integrity, label coverage
+- **`tests/integration/`** — live redaction against the Gemini API (requires `GOOGLE_API_KEY`)
+
+```sh
+uv run pytest tests/unit          # fast, offline
+uv run pytest tests/integration   # requires API key
+uv run pytest                     # all
+```
 
 ## Future Optimization Path
 
