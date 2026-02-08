@@ -43,7 +43,7 @@ class TestRedactLogging:
         mock_result.entities = [{"value": "John", "label": "GIVENNAME1"}]
         mock_redactor_cls.return_value.return_value = mock_result
 
-        with caplog.at_level("INFO", logger="main"):
+        with caplog.at_level("DEBUG", logger="main"):
             redact("Call John")
 
         assert any("Entities found:" in r.message for r in caplog.records)

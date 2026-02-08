@@ -239,4 +239,37 @@ EXAMPLES = [
             " in [BUILDING], [CITY], [COUNTRY]."
         ),
     ).with_inputs("text"),
+    # 26. Complex multi-entity: name, email, tel, address, SSN, DOB, ID, bank details
+    dspy.Example(
+        text=(
+            "Please contact Dr. Sarah Johnson at sarah.johnson@medcorp.com"
+            " or call her at (415) 555-0198. She lives at 742 Evergreen Terrace,"
+            " Springfield, IL 62704. Her SSN is 123-45-6789, date of birth is"
+            " March 15, 1985, and her employee ID is EMP-29481. Send payment"
+            " of $4,500 to account number 8827364510 at First National Bank,"
+            " routing number 071000013."
+        ),
+        entities=[
+            {"value": "Dr.", "label": "TITLE"},
+            {"value": "Sarah", "label": "GIVENNAME1"},
+            {"value": "Johnson", "label": "LASTNAME1"},
+            {"value": "sarah.johnson@medcorp.com", "label": "EMAIL"},
+            {"value": "(415) 555-0198", "label": "TEL"},
+            {"value": "742 Evergreen Terrace", "label": "STREET"},
+            {"value": "Springfield", "label": "CITY"},
+            {"value": "IL", "label": "STATE"},
+            {"value": "62704", "label": "POSTCODE"},
+            {"value": "123-45-6789", "label": "SOCIALNUMBER"},
+            {"value": "March 15, 1985", "label": "BOD"},
+            {"value": "EMP-29481", "label": "IDCARD"},
+        ],
+        redacted_text=(
+            "Please contact [TITLE] [GIVENNAME1] [LASTNAME1] at [EMAIL]"
+            " or call her at [TEL]. She lives at [STREET],"
+            " [CITY], [STATE] [POSTCODE]. Her SSN is [SOCIALNUMBER], date of birth is"
+            " [BOD], and her employee ID is [IDCARD]. Send payment"
+            " of $4,500 to account number 8827364510 at First National Bank,"
+            " routing number 071000013."
+        ),
+    ).with_inputs("text"),
 ]

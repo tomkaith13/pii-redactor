@@ -15,12 +15,12 @@ def redact(text: str) -> str:
     api_key = os.getenv("GOOGLE_API_KEY")
     model = os.getenv("DSPY_MODEL", "gemini/gemini-2.0-flash")
     logger.info("Using model: %s", model)
-    logger.debug("Input text: %s", text)
+    logger.info("Input text: %s", text)
     lm = dspy.LM(model, api_key=api_key)
     dspy.configure(lm=lm)
     redactor = PIIRedactor()
     result = redactor(text=text)
-    logger.info("Entities found: %s", result.entities)
+    logger.debug("Entities found: %s", result.entities)
     logger.debug("Redacted text: %s", result.redacted_text)
     return result.redacted_text
 
@@ -38,7 +38,7 @@ if __name__ == "__main__":
     logging.basicConfig(level=level, format="%(name)s %(levelname)s: %(message)s")
 
     result = redact(args.text)
-    print(result)
+    print(f"Redacted result: {result}")
 
     if args.verbose:
         print("\n--- DSPy History ---")
