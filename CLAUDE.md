@@ -28,6 +28,8 @@ Or from the CLI:
 
 ```sh
 uv run python main.py "Call John Smith at 555-123-4567"
+uv run python main.py -v "Call John Smith at 555-123-4567"       # + DSPy prompt/response history
+uv run python main.py --debug "Call John Smith at 555-123-4567"  # + debug logging
 ```
 
 ## Tests
@@ -49,10 +51,10 @@ uv run pre-commit run --all-files   # manual run
 
 ## Project structure
 
-- `main.py` — `redact()` public API and CLI entry point
+- `main.py` — `redact()` public API and CLI entry point (with `-v`/`--debug` flags)
 - `redactor.py` — `PIIEntity` data model, `IdentifyPII` DSPy signature, `PIIRedactor` module
 - `examples.py` — 25 few-shot `dspy.Example` instances
-- `tests/unit/` — structural tests (examples validation, label coverage, data model)
+- `tests/unit/` — structural tests (examples validation, label coverage, data model, CLI/logging)
 - `tests/integration/` — live redaction tests (require API key)
 - `.env` — `GOOGLE_API_KEY`, `DSPY_MODEL` (gitignored)
 - `.pre-commit-config.yaml` — ruff lint + format hooks

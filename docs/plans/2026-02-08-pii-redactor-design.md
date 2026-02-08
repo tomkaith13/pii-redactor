@@ -6,25 +6,32 @@ A DSPy program that takes a sentence and redacts PII using type labels. Uses Gem
 
 ## Architecture
 
-All code lives in `main.py`. Three components:
+Code is split across three modules:
 
-1. **`PIIEntity`** — Pydantic `BaseModel` for identified PII (value + label pairs).
-2. **`IdentifyPII`** — DSPy `Signature` defining inputs (`text`) and outputs (`entities: list[PIIEntity]`, `redacted_text: str`).
-3. **`PIIRedactor`** — DSPy `Module` using `ChainOfThought(IdentifyPII)`. The LLM first identifies all PII entities, then produces the redacted sentence with `[LABEL]` placeholders.
-4. **`redact(text: str) -> str`** — Public function that loads `GOOGLE_API_KEY` from `.env`, configures `dspy.LM` with `gemini/gemini-2.0-flash`, runs the module, and returns the redacted string.
+- **`redactor.py`** — core DSPy components:
+  1. **`PIIEntity`** — Pydantic `BaseModel` for identified PII (value + label pairs).
+  2. **`IdentifyPII`** — DSPy `Signature` defining inputs (`text`) and outputs (`entities: list[PIIEntity]`, `redacted_text: str`).
+  3. **`PIIRedactor`** — DSPy `Module` using `ChainOfThought(IdentifyPII)`. Loads few-shot demos from `examples.py` at init. The LLM first identifies all PII entities, then produces the redacted sentence with `[LABEL]` placeholders.
+- **`examples.py`** — 25 hand-crafted `dspy.Example` instances covering all label types, wired as few-shot demos in `PIIRedactor`.
+- **`main.py`** — public API and CLI:
+  1. **`redact(text: str) -> str`** — loads `GOOGLE_API_KEY` and `DSPY_MODEL` from `.env`, configures `dspy.LM`, runs the module, and returns the redacted string. Emits structured logs via Python `logging`.
+  2. **CLI** — `argparse`-based entry point with `-v`/`--verbose` (shows DSPy prompt/response history) and `--debug` (enables debug-level logging) flags.
 
 ## Dependencies
 
 - `dspy` (includes `litellm` for Gemini connectivity)
 - `python-dotenv`
 
-## API Key
+## Environment Variables
 
-Loaded from a `.env` file in the project root:
+Loaded from a `.env` file in the project root (see `.env.example`):
 
 ```
 GOOGLE_API_KEY=your-key-here
+DSPY_MODEL=gemini/gemini-2.0-flash
 ```
+
+`DSPY_MODEL` is optional and defaults to `gemini/gemini-2.0-flash`.
 
 ## Label Set
 
@@ -61,18 +68,22 @@ result = redact("Call John Smith at 555-123-4567 or john@example.com")
 
 ```sh
 uv run python main.py "Call John Smith at 555-123-4567"
+uv run python main.py -v "Call John Smith at 555-123-4567"       # + DSPy history
+uv run python main.py --debug "Call John Smith at 555-123-4567"  # + debug logging
 ```
 
 ## Examples
 
-25 hand-crafted DSPy examples are included in `main.py` covering all label types. These serve as static few-shot demos and can later be replaced by optimizer-selected examples.
+25 hand-crafted DSPy examples live in `examples.py` covering all label types. They are loaded as few-shot demos in `PIIRedactor.__init__` and can later be replaced by optimizer-selected examples.
 
 ## Tests
 
 Split into two directories:
 
-- **`tests/unit/`** — structural validation (no API calls): data model, example integrity, label coverage
+- **`tests/unit/`** — structural validation (no API calls): data model, example integrity, label coverage, CLI/logging
 - **`tests/integration/`** — live redaction against the Gemini API (requires `GOOGLE_API_KEY`)
+
+Pre-commit hooks enforce ruff linting and formatting on every commit.
 
 ```sh
 uv run pytest tests/unit          # fast, offline
