@@ -13,7 +13,7 @@ DSPy-based PII redactor that replaces personally identifiable information in tex
 
 ```sh
 uv sync
-cp .env.example .env  # then add your real GOOGLE_API_KEY
+cp .env.example .env  # then add your real GOOGLE_API_KEY and optionally change DSPY_MODEL
 ```
 
 ## Usage
@@ -39,9 +39,20 @@ uv run pytest tests/integration            # integration tests only (requires AP
 uv run pytest -m "not integration"         # also works via marker
 ```
 
+## Linting
+
+Pre-commit hooks run ruff linting and formatting on every commit:
+
+```sh
+uv run pre-commit run --all-files   # manual run
+```
+
 ## Project structure
 
-- `main.py` — signature, module, 25 few-shot examples, `redact()` API
+- `main.py` — `redact()` public API and CLI entry point
+- `redactor.py` — `PIIEntity` data model, `IdentifyPII` DSPy signature, `PIIRedactor` module
+- `examples.py` — 25 few-shot `dspy.Example` instances
 - `tests/unit/` — structural tests (examples validation, label coverage, data model)
 - `tests/integration/` — live redaction tests (require API key)
-- `.env` — `GOOGLE_API_KEY` (gitignored)
+- `.env` — `GOOGLE_API_KEY`, `DSPY_MODEL` (gitignored)
+- `.pre-commit-config.yaml` — ruff lint + format hooks

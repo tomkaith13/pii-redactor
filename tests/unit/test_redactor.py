@@ -1,4 +1,4 @@
-from main import PIIRedactor
+from redactor import PIIRedactor
 
 
 class TestPIIRedactor:

@@ -1,6 +1,6 @@
 import pytest
 
-from main import PIIEntity
+from redactor import PIIEntity
 
 
 class TestPIIEntity:

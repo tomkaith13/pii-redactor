@@ -1,15 +1,33 @@
 import re
 
-from main import EXAMPLES
+from examples import EXAMPLES
 
 VALID_LABELS = {
-    "GIVENNAME1", "GIVENNAME2", "LASTNAME1", "LASTNAME2", "TITLE",
-    "TEL", "EMAIL", "USERNAME",
-    "SOCIALNUMBER", "IDCARD", "DRIVERLICENSE", "PASSPORT",
-    "STREET", "BUILDING", "CITY", "STATE", "POSTCODE", "COUNTRY", "SECADDRESS",
-    "SEX", "BOD", "PASS",
+    "GIVENNAME1",
+    "GIVENNAME2",
+    "LASTNAME1",
+    "LASTNAME2",
+    "TITLE",
+    "TEL",
+    "EMAIL",
+    "USERNAME",
+    "SOCIALNUMBER",
+    "IDCARD",
+    "DRIVERLICENSE",
+    "PASSPORT",
+    "STREET",
+    "BUILDING",
+    "CITY",
+    "STATE",
+    "POSTCODE",
+    "COUNTRY",
+    "SECADDRESS",
+    "SEX",
+    "BOD",
+    "PASS",
     "IP",
-    "DATE", "TIME",
+    "DATE",
+    "TIME",
 }
 
 LABEL_PATTERN = re.compile(r"\[([A-Z0-9]+)\]")
