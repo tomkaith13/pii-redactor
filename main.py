@@ -62,8 +62,8 @@ if __name__ == "__main__":
         raise SystemExit(0)
 
     result = redact(args.text)
-    print(f"Redacted result: {result}")
+    logger.info("Redacted result: %s", result)
 
     if args.verbose:
-        print("\n--- DSPy History ---")
+        logger.info("--- DSPy History ---")
         dspy.inspect_history(n=1)

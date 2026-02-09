@@ -100,7 +100,7 @@ class TestCLIFlags:
             timeout=60,
         )
         assert result.returncode == 0
-        assert result.stdout.strip()
+        assert "Redacted result:" in result.stderr
 
     def test_verbose_shows_dspy_history(self):
         result = subprocess.run(
@@ -110,7 +110,7 @@ class TestCLIFlags:
             timeout=60,
         )
         assert result.returncode == 0
-        assert "--- DSPy History ---" in result.stdout
+        assert "--- DSPy History ---" in result.stderr
 
     def test_debug_shows_info_logs(self):
         result = subprocess.run(

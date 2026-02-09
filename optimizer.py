@@ -147,7 +147,7 @@ def load_optimized_model() -> PIIRedactor | None:
     if not os.path.exists(OPTIMIZED_MODEL_PATH):
         return None
 
-    logger.info("Loading optimized model from %s", OPTIMIZED_MODEL_PATH)
+    logger.debug("Loading optimized model from %s", OPTIMIZED_MODEL_PATH)
     redactor = PIIRedactor()
     redactor.load(OPTIMIZED_MODEL_PATH)
     return redactor
