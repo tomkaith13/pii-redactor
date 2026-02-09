@@ -13,11 +13,11 @@ class TestPiiMetric:
         assert result.score == 1
         assert "Correct" in result.feedback
 
-    def test_mismatch_scores_zero(self):
+    def test_mismatch_scores_partial(self):
         gold = dspy.Example(redacted_text="Call [GIVENNAME1] at [TEL]")
         pred = dspy.Prediction(redacted_text="Call John at 555-1234")
         result = pii_metric(gold, pred)
-        assert result.score == 0
+        assert 0 < result.score < 1
         assert "Incorrect" in result.feedback
         assert "Expected" in result.feedback
 

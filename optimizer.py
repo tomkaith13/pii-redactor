@@ -5,6 +5,7 @@ from pathlib import Path
 
 import dspy
 from datasets import Dataset, load_dataset
+from dspy.evaluate.metrics import f1_score
 
 from redactor import PIIRedactor
 
@@ -65,18 +66,25 @@ def pii_metric(
     pred_name: str | None = None,
     pred_trace: Any | None = None,
 ) -> dspy.Prediction:
-    """Exact match metric with feedback for GEPA.
+    """Token-level F1 metric with feedback for GEPA.
 
-    Compares pred.redacted_text to gold.redacted_text.
-    Returns dspy.Prediction(score=0|1, feedback=str).
+    Compares pred.redacted_text to gold.redacted_text using token-level F1,
+    giving partial credit for partially correct redactions.
+    Returns dspy.Prediction(score=float, feedback=str).
     """
-    score = 1 if pred.redacted_text.strip() == gold.redacted_text.strip() else 0
+    score = f1_score(pred.redacted_text.strip(), gold.redacted_text.strip())
 
-    if score == 1:
+    if score == 1.0:
         feedback = "Correct. The redacted text matches exactly."
+    elif score > 0.8:
+        feedback = (
+            f"Close (F1={score:.2f}). Minor differences.\n"
+            f"Expected:\n{gold.redacted_text}\n\nGot:\n{pred.redacted_text}"
+        )
     else:
         feedback = (
-            f"Incorrect. Expected:\n{gold.redacted_text}\n\nGot:\n{pred.redacted_text}"
+            f"Incorrect (F1={score:.2f}).\n"
+            f"Expected:\n{gold.redacted_text}\n\nGot:\n{pred.redacted_text}"
         )
 
     return dspy.Prediction(score=score, feedback=feedback)
@@ -115,7 +123,7 @@ def optimize(api_key: str, model: str, reflection_model: str | None = None) -> N
     logger.info("Reflection model: %s", reflection_model)
     optimizer = dspy.GEPA(
         metric=pii_metric,
-        auto="light",
+        auto="medium",
         reflection_lm=reflection_lm,
         num_threads=4,
         track_stats=True,

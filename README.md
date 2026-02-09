@@ -50,6 +50,19 @@ Pre-commit hooks run ruff linting and formatting on every commit:
 uv run pre-commit run --all-files   # manual run
 ```
 
+## Optimization Results
+
+GEPA optimization on 500 English samples from ai4privacy/pii-masking-300k (450 train / 50 val):
+
+| Metric | Score | Cost |
+|--------|-------|------|
+| Token-level F1 | **93.75%** | $1.12 ($1.04 student + $0.08 reflection) |
+
+- Student model: Gemini 2.0 Flash (`gemini/gemini-2.0-flash`)
+- Reflection model: Gemini 2.5 Flash (`gemini/gemini-2.5-flash`)
+- Optimizer: DSPy GEPA (`auto="medium"`, 4 threads)
+- Best program found at iteration 7
+
 ## Project structure
 
 - `main.py` — `redact()` public API and CLI entry point (with `-v`/`--debug`/`--optimize` flags)
