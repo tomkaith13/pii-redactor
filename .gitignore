@@ -11,3 +11,7 @@ wheels/
 
 # Environment variables
 .env
+
+# Optimization artifacts
+data/
+optimized_model/

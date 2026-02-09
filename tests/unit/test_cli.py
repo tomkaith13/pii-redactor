@@ -9,9 +9,10 @@ from main import redact
 class TestRedactLogging:
     """Test that redact() emits the expected log messages."""
 
+    @patch("optimizer.load_optimized_model", return_value=None)
     @patch("main.PIIRedactor")
     @patch("main.dspy")
-    def test_logs_model_at_info(self, mock_dspy, mock_redactor_cls, caplog):
+    def test_logs_model_at_info(self, mock_dspy, mock_redactor_cls, _mock_load, caplog):
         mock_result = MagicMock()
         mock_result.redacted_text = "redacted"
         mock_result.entities = []
@@ -22,9 +23,12 @@ class TestRedactLogging:
 
         assert any("Using model:" in r.message for r in caplog.records)
 
+    @patch("optimizer.load_optimized_model", return_value=None)
     @patch("main.PIIRedactor")
     @patch("main.dspy")
-    def test_logs_input_at_debug(self, mock_dspy, mock_redactor_cls, caplog):
+    def test_logs_input_at_debug(
+        self, mock_dspy, mock_redactor_cls, _mock_load, caplog
+    ):
         mock_result = MagicMock()
         mock_result.redacted_text = "redacted"
         mock_result.entities = []
@@ -35,9 +39,12 @@ class TestRedactLogging:
 
         assert any("secret text" in r.message for r in caplog.records)
 
+    @patch("optimizer.load_optimized_model", return_value=None)
     @patch("main.PIIRedactor")
     @patch("main.dspy")
-    def test_logs_entities_at_info(self, mock_dspy, mock_redactor_cls, caplog):
+    def test_logs_entities_at_info(
+        self, mock_dspy, mock_redactor_cls, _mock_load, caplog
+    ):
         mock_result = MagicMock()
         mock_result.redacted_text = "redacted"
         mock_result.entities = [{"value": "John", "label": "GIVENNAME1"}]
@@ -48,9 +55,12 @@ class TestRedactLogging:
 
         assert any("Entities found:" in r.message for r in caplog.records)
 
+    @patch("optimizer.load_optimized_model", return_value=None)
     @patch("main.PIIRedactor")
     @patch("main.dspy")
-    def test_logs_redacted_text_at_debug(self, mock_dspy, mock_redactor_cls, caplog):
+    def test_logs_redacted_text_at_debug(
+        self, mock_dspy, mock_redactor_cls, _mock_load, caplog
+    ):
         mock_result = MagicMock()
         mock_result.redacted_text = "[GIVENNAME1]"
         mock_result.entities = []
@@ -61,9 +71,12 @@ class TestRedactLogging:
 
         assert any("[GIVENNAME1]" in r.message for r in caplog.records)
 
+    @patch("optimizer.load_optimized_model", return_value=None)
     @patch("main.PIIRedactor")
     @patch("main.dspy")
-    def test_no_debug_logs_at_info_level(self, mock_dspy, mock_redactor_cls, caplog):
+    def test_no_debug_logs_at_info_level(
+        self, mock_dspy, mock_redactor_cls, _mock_load, caplog
+    ):
         mock_result = MagicMock()
         mock_result.redacted_text = "redacted"
         mock_result.entities = []

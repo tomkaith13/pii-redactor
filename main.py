@@ -18,7 +18,13 @@ def redact(text: str) -> str:
     logger.info("Input text: %s", text)
     lm = dspy.LM(model, api_key=api_key)
     dspy.configure(lm=lm)
-    redactor = PIIRedactor()
+
+    from optimizer import load_optimized_model
+
+    redactor = load_optimized_model()
+    if redactor is None:
+        redactor = PIIRedactor()
+
     result = redactor(text=text)
     logger.debug("Entities found: %s", result.entities)
     logger.debug("Redacted text: %s", result.redacted_text)
@@ -32,10 +38,25 @@ if __name__ == "__main__":
         "-v", "--verbose", action="store_true", help="Show DSPy prompt/response history"
     )
     parser.add_argument("--debug", action="store_true", help="Enable debug logging")
+    parser.add_argument(
+        "--optimize",
+        action="store_true",
+        help="Download dataset and optimize the PII redactor using GEPA",
+    )
     args = parser.parse_args()
 
     level = logging.DEBUG if args.debug else logging.INFO
     logging.basicConfig(level=level, format="%(name)s %(levelname)s: %(message)s")
+
+    if args.optimize:
+        load_dotenv()
+        api_key = os.getenv("GOOGLE_API_KEY")
+        model = os.getenv("DSPY_MODEL", "gemini/gemini-2.0-flash")
+
+        from optimizer import optimize
+
+        optimize(api_key=api_key, model=model)
+        raise SystemExit(0)
 
     result = redact(args.text)
     print(f"Redacted result: {result}")
