@@ -1,9 +1,10 @@
 import logging
 import os
+from typing import Any
 from pathlib import Path
 
 import dspy
-from datasets import load_dataset
+from datasets import Dataset, load_dataset
 
 from redactor import PIIRedactor
 
@@ -13,7 +14,7 @@ DATASET_DIR = "./data/ai4privacy"
 OPTIMIZED_MODEL_PATH = "./optimized_model/pii_redactor.json"
 
 
-def download_dataset(data_dir: str = DATASET_DIR):
+def download_dataset(data_dir: str = DATASET_DIR) -> Dataset:
     """Download ai4privacy/pii-masking-300k if not cached locally.
 
     Returns the English-only train split.
@@ -29,7 +30,9 @@ def download_dataset(data_dir: str = DATASET_DIR):
     return english
 
 
-def prepare_examples(dataset, n: int = 500) -> tuple[list, list]:
+def prepare_examples(
+    dataset: Dataset, n: int = 500
+) -> tuple[list[dspy.Example], list[dspy.Example]]:
     """Convert HF dataset rows to DSPy Examples.
 
     Takes the first n samples, maps source_text -> text (input)
@@ -51,7 +54,13 @@ def prepare_examples(dataset, n: int = 500) -> tuple[list, list]:
     return trainset, valset
 
 
-def pii_metric(gold, pred, trace=None, pred_name=None, pred_trace=None):
+def pii_metric(
+    gold: dspy.Example,
+    pred: dspy.Prediction,
+    trace: Any | None = None,
+    pred_name: str | None = None,
+    pred_trace: Any | None = None,
+) -> dspy.Prediction:
     """Exact match metric with feedback for GEPA.
 
     Compares pred.redacted_text to gold.redacted_text.
@@ -69,12 +78,12 @@ def pii_metric(gold, pred, trace=None, pred_name=None, pred_trace=None):
     return dspy.Prediction(score=score, feedback=feedback)
 
 
-def _sum_lm_cost(lm) -> float:
+def _sum_lm_cost(lm: dspy.LM) -> float:
     """Sum the cost field from an LM's history entries."""
     return sum(entry.get("cost", 0) or 0 for entry in lm.history)
 
 
-def optimize(api_key: str, model: str, reflection_model: str | None = None):
+def optimize(api_key: str, model: str, reflection_model: str | None = None) -> None:
     """Run GEPA optimization pipeline.
 
     1. Downloads/loads dataset

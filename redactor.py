@@ -30,12 +30,12 @@ class IdentifyPII(dspy.Signature):
 
 
 class PIIRedactor(dspy.Module):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         from examples import EXAMPLES
 
         self.cot = dspy.ChainOfThought(IdentifyPII)
         self.cot.demos = EXAMPLES
 
-    def forward(self, text):
+    def forward(self, text: str) -> dspy.Prediction:
         return self.cot(text=text)

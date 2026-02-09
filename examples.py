@@ -1,6 +1,6 @@
 import dspy
 
-EXAMPLES = [
+EXAMPLES: list[dspy.Example] = [
     # 1. Names: GIVENNAME1, LASTNAME1
     dspy.Example(
         text="Call John Smith at the office.",
