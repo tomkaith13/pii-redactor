@@ -52,7 +52,7 @@ uv run pre-commit run --all-files   # manual run
 
 ## Optimization Results
 
-GEPA optimization on 500 English samples from ai4privacy/pii-masking-300k (450 train / 50 val):
+GEPA optimization on 5500 English samples from ai4privacy/pii-masking-300k (5000 train / 500 val):
 
 | Metric | Score | Cost |
 |--------|-------|------|
