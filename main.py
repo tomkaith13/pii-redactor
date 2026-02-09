@@ -28,6 +28,8 @@ def redact(text: str) -> str:
     result = redactor(text=text)
     logger.debug("Entities found: %s", result.entities)
     logger.debug("Redacted text: %s", result.redacted_text)
+    cost = sum(entry.get("cost", 0) or 0 for entry in lm.history)
+    logger.debug("Cost: $%.4f", cost)
     return result.redacted_text
 
 
@@ -52,10 +54,11 @@ if __name__ == "__main__":
         load_dotenv()
         api_key = os.getenv("GOOGLE_API_KEY")
         model = os.getenv("DSPY_MODEL", "gemini/gemini-2.0-flash")
+        reflection_model = os.getenv("GEPA_REFLECTION_MODEL")
 
         from optimizer import optimize
 
-        optimize(api_key=api_key, model=model)
+        optimize(api_key=api_key, model=model, reflection_model=reflection_model)
         raise SystemExit(0)
 
     result = redact(args.text)

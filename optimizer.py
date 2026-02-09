@@ -69,7 +69,12 @@ def pii_metric(gold, pred, trace=None, pred_name=None, pred_trace=None):
     return dspy.Prediction(score=score, feedback=feedback)
 
 
-def optimize(api_key: str, model: str):
+def _sum_lm_cost(lm) -> float:
+    """Sum the cost field from an LM's history entries."""
+    return sum(entry.get("cost", 0) or 0 for entry in lm.history)
+
+
+def optimize(api_key: str, model: str, reflection_model: str | None = None):
     """Run GEPA optimization pipeline.
 
     1. Downloads/loads dataset
@@ -77,9 +82,15 @@ def optimize(api_key: str, model: str):
     3. Configures DSPy LM
     4. Runs GEPA compilation
     5. Saves optimized program to disk
+    6. Logs cost breakdown
     """
     lm = dspy.LM(model, api_key=api_key)
     dspy.configure(lm=lm)
+
+    reflection_model = reflection_model or model
+    reflection_lm = (
+        dspy.LM(reflection_model, api_key=api_key) if reflection_model != model else lm
+    )
 
     dataset = download_dataset()
     trainset, valset = prepare_examples(dataset)
@@ -87,10 +98,12 @@ def optimize(api_key: str, model: str):
     student = PIIRedactor()
 
     logger.info("Starting GEPA optimization (auto=light)...")
+    logger.info("Student model: %s", model)
+    logger.info("Reflection model: %s", reflection_model)
     optimizer = dspy.GEPA(
         metric=pii_metric,
         auto="light",
-        reflection_lm=lm,
+        reflection_lm=reflection_lm,
         num_threads=4,
         track_stats=True,
         add_format_failure_as_feedback=True,
@@ -105,6 +118,16 @@ def optimize(api_key: str, model: str):
     save_dir.mkdir(parents=True, exist_ok=True)
     optimized.save(OPTIMIZED_MODEL_PATH, save_program=False)
     logger.info("Optimized model saved to %s", OPTIMIZED_MODEL_PATH)
+
+    student_cost = _sum_lm_cost(lm)
+    reflection_cost = _sum_lm_cost(reflection_lm) if reflection_lm is not lm else 0.0
+    total_cost = student_cost + reflection_cost
+    logger.info(
+        "Optimization cost — Student: $%.4f, Reflection: $%.4f, Total: $%.4f",
+        student_cost,
+        reflection_cost,
+        total_cost,
+    )
 
 
 def load_optimized_model() -> PIIRedactor | None:

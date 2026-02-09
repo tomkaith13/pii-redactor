@@ -58,7 +58,7 @@ uv run pre-commit run --all-files   # manual run
 - `examples.py` — 25 few-shot `dspy.Example` instances
 - `tests/unit/` — structural tests (examples validation, label coverage, data model, CLI/logging, optimizer)
 - `tests/integration/` — live redaction tests (require API key)
-- `.env` — `GOOGLE_API_KEY`, `DSPY_MODEL` (gitignored)
+- `.env` — `GOOGLE_API_KEY`, `DSPY_MODEL`, `GEPA_REFLECTION_MODEL` (gitignored)
 - `.pre-commit-config.yaml` — ruff lint + format hooks
 - `data/` — cached HuggingFace dataset (gitignored, created by `--optimize`)
 - `optimized_model/` — saved optimized model state (gitignored, created by `--optimize`)
