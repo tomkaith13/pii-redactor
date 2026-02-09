@@ -27,10 +27,10 @@ print(redact("Call John Smith at 555-123-4567"))
 Or from the CLI:
 
 ```sh
-uv run python main.py "Call John Smith at 555-123-4567"
-uv run python main.py -v "Call John Smith at 555-123-4567"       # + DSPy prompt/response history
-uv run python main.py --debug "Call John Smith at 555-123-4567"  # + debug logging
-uv run python main.py --optimize                                # optimize with GEPA (downloads dataset on first run)
+uv run main.py "Call John Smith at 555-123-4567"
+uv run main.py -v "Call John Smith at 555-123-4567"       # + DSPy prompt/response history
+uv run main.py --debug "Call John Smith at 555-123-4567"  # + debug logging
+uv run main.py --optimize                                # optimize with GEPA (downloads dataset on first run)
 ```
 
 ## Tests
