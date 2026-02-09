@@ -45,15 +45,15 @@ class TestPrepareExamples:
         mock_ds.__len__ = lambda self: n
         return mock_ds
 
-    def test_splits_90_10(self):
+    def test_splits_by_train_val_size(self):
         ds = self._make_dataset(100)
-        train, val = prepare_examples(ds, n=100)
+        train, val = prepare_examples(ds, train_size=90, val_size=10)
         assert len(train) == 90
         assert len(val) == 10
 
     def test_creates_dspy_examples(self):
         ds = self._make_dataset(10)
-        train, val = prepare_examples(ds, n=10)
+        train, val = prepare_examples(ds, train_size=7, val_size=3)
         ex = train[0]
         assert hasattr(ex, "text")
         assert hasattr(ex, "redacted_text")
@@ -61,8 +61,16 @@ class TestPrepareExamples:
 
     def test_caps_at_dataset_size(self):
         ds = self._make_dataset(5)
-        train, val = prepare_examples(ds, n=500)
+        train, val = prepare_examples(ds, train_size=450, val_size=50)
         assert len(train) + len(val) == 5
+
+    def test_reads_env_defaults(self, monkeypatch):
+        monkeypatch.setenv("OPTIMIZE_TRAIN_SIZE", "80")
+        monkeypatch.setenv("OPTIMIZE_VAL_SIZE", "20")
+        ds = self._make_dataset(100)
+        train, val = prepare_examples(ds)
+        assert len(train) == 80
+        assert len(val) == 20
 
 
 class TestLoadOptimizedModel:

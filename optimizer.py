@@ -31,14 +31,19 @@ def download_dataset(data_dir: str = DATASET_DIR) -> Dataset:
 
 
 def prepare_examples(
-    dataset: Dataset, n: int = 500
+    dataset: Dataset,
+    train_size: int | None = None,
+    val_size: int | None = None,
 ) -> tuple[list[dspy.Example], list[dspy.Example]]:
     """Convert HF dataset rows to DSPy Examples.
 
-    Takes the first n samples, maps source_text -> text (input)
+    Takes train_size + val_size samples, maps source_text -> text (input)
     and target_text -> redacted_text (output).
-    Returns (trainset of 450, valset of 50).
+    Sizes default to env vars OPTIMIZE_TRAIN_SIZE / OPTIMIZE_VAL_SIZE (450/50).
     """
+    train_size = train_size or int(os.environ.get("OPTIMIZE_TRAIN_SIZE", "450"))
+    val_size = val_size or int(os.environ.get("OPTIMIZE_VAL_SIZE", "50"))
+    n = train_size + val_size
     subset = dataset.select(range(min(n, len(dataset))))
     examples = [
         dspy.Example(
@@ -47,9 +52,8 @@ def prepare_examples(
         ).with_inputs("text")
         for row in subset
     ]
-    split = int(len(examples) * 0.9)
-    trainset = examples[:split]
-    valset = examples[split:]
+    trainset = examples[:train_size]
+    valset = examples[train_size:]
     logger.info("Prepared %d train, %d val examples", len(trainset), len(valset))
     return trainset, valset
 
