@@ -31,6 +31,7 @@ uv run main.py "Call John Smith at 555-123-4567"
 uv run main.py -v "Call John Smith at 555-123-4567"       # + DSPy prompt/response history
 uv run main.py --debug "Call John Smith at 555-123-4567"  # + debug logging
 uv run main.py --optimize                                # optimize with GEPA (downloads dataset on first run)
+uv run main.py --evaluate                                # evaluate on 500 held-out examples via dspy.Evaluate
 ```
 
 ## Tests
@@ -56,18 +57,31 @@ GEPA optimization on 5500 English samples from ai4privacy/pii-masking-300k (5000
 
 | Metric | Score | Cost |
 |--------|-------|------|
-| Token-level F1 | **93.75%** | $1.12 ($1.04 student + $0.08 reflection) |
+| Token-level F1 (val) | **93.75%** | $1.12 ($1.04 student + $0.08 reflection) |
 
 - Student model: Gemini 2.0 Flash (`gemini/gemini-2.0-flash`)
 - Reflection model: Gemini 2.5 Flash (`gemini/gemini-2.5-flash`)
 - Optimizer: DSPy GEPA (`auto="medium"`, 4 threads)
 - Best program found at iteration 7
 
+## Evaluation Results
+
+Held-out evaluation on 500 examples (disjoint from optimization train/val split):
+
+| Metric | Score | Cost |
+|--------|-------|------|
+| Token-level F1 | **93.84%** | $0.10 |
+
+- Model: Gemini 2.0 Flash (`gemini/gemini-2.0-flash`)
+- Eval set: 500 examples at offset 500 from the HF dataset
+- 20 threads, optimized model
+
 ## Project structure
 
-- `main.py` — `redact()` public API and CLI entry point (with `-v`/`--debug`/`--optimize` flags)
+- `main.py` — `redact()` public API and CLI entry point (with `-v`/`--debug`/`--optimize`/`--evaluate` flags)
 - `redactor.py` — `PIIEntity` data model, `IdentifyPII` DSPy signature, `PIIRedactor` module
 - `optimizer.py` — GEPA optimization pipeline (dataset download, metric, optimize, load)
+- `evaluator.py` — held-out evaluation via `dspy.Evaluate` (dataset prep, evaluate)
 - `examples.py` — 25 few-shot `dspy.Example` instances
 - `tests/unit/` — structural tests (examples validation, label coverage, data model, CLI/logging, optimizer)
 - `tests/integration/` — live redaction tests (require API key)
