@@ -55,7 +55,8 @@ uv run pre-commit run --all-files   # manual run
 
 - `main.py` — `redact()` public API and CLI entry point (with `-v`/`--debug`/`--optimize`/`--evaluate` flags)
 - `redactor.py` — `PIIEntity` data model, `IdentifyPII` DSPy signature, `PIIRedactor` module
-- `optimizer.py` — GEPA optimization pipeline (dataset download, metric, optimize, evaluate, load)
+- `optimizer.py` — GEPA optimization pipeline (dataset download, metric, optimize, load)
+- `evaluator.py` — held-out evaluation via `dspy.Evaluate` (dataset prep, evaluate)
 - `examples.py` — 25 few-shot `dspy.Example` instances
 - `tests/unit/` — structural tests (examples validation, label coverage, data model, CLI/logging, optimizer)
 - `tests/integration/` — live redaction tests (require API key)
