@@ -45,6 +45,11 @@ if __name__ == "__main__":
         action="store_true",
         help="Download dataset and optimize the PII redactor using GEPA",
     )
+    parser.add_argument(
+        "--evaluate",
+        action="store_true",
+        help="Evaluate the PII redactor on a held-out test set",
+    )
     args = parser.parse_args()
 
     level = logging.DEBUG if args.debug else logging.INFO
@@ -59,6 +64,16 @@ if __name__ == "__main__":
         from optimizer import optimize
 
         optimize(api_key=api_key, model=model, reflection_model=reflection_model)
+        raise SystemExit(0)
+
+    if args.evaluate:
+        load_dotenv()
+        api_key = os.getenv("GOOGLE_API_KEY")
+        model = os.getenv("DSPY_MODEL", "gemini/gemini-2.0-flash")
+
+        from optimizer import evaluate
+
+        evaluate(api_key=api_key, model=model)
         raise SystemExit(0)
 
     result = redact(args.text)

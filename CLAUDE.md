@@ -31,6 +31,7 @@ uv run main.py "Call John Smith at 555-123-4567"
 uv run main.py -v "Call John Smith at 555-123-4567"       # + DSPy prompt/response history
 uv run main.py --debug "Call John Smith at 555-123-4567"  # + debug logging
 uv run main.py --optimize                                # optimize with GEPA (downloads dataset on first run)
+uv run main.py --evaluate                                # evaluate on 500 held-out examples via dspy.Evaluate
 ```
 
 ## Tests
@@ -52,9 +53,9 @@ uv run pre-commit run --all-files   # manual run
 
 ## Project structure
 
-- `main.py` — `redact()` public API and CLI entry point (with `-v`/`--debug`/`--optimize` flags)
+- `main.py` — `redact()` public API and CLI entry point (with `-v`/`--debug`/`--optimize`/`--evaluate` flags)
 - `redactor.py` — `PIIEntity` data model, `IdentifyPII` DSPy signature, `PIIRedactor` module
-- `optimizer.py` — GEPA optimization pipeline (dataset download, metric, optimize, load)
+- `optimizer.py` — GEPA optimization pipeline (dataset download, metric, optimize, evaluate, load)
 - `examples.py` — 25 few-shot `dspy.Example` instances
 - `tests/unit/` — structural tests (examples validation, label coverage, data model, CLI/logging, optimizer)
 - `tests/integration/` — live redaction tests (require API key)
