@@ -50,7 +50,15 @@ if __name__ == "__main__":
         action="store_true",
         help="Evaluate the PII redactor on a held-out test set",
     )
+    parser.add_argument(
+        "--randomize",
+        action="store_true",
+        help="Randomly sample evaluation set instead of sequential selection",
+    )
     args = parser.parse_args()
+
+    if args.randomize and not args.evaluate:
+        parser.error("--randomize requires --evaluate")
 
     level = logging.DEBUG if args.debug else logging.INFO
     logging.basicConfig(level=level, format="%(name)s %(levelname)s: %(message)s")
@@ -73,7 +81,7 @@ if __name__ == "__main__":
 
         from evaluator import evaluate
 
-        evaluate(api_key=api_key, model=model)
+        evaluate(api_key=api_key, model=model, randomize=args.randomize)
         raise SystemExit(0)
 
     result = redact(args.text)

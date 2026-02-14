@@ -32,6 +32,7 @@ uv run main.py -v "Call John Smith at 555-123-4567"       # + DSPy prompt/respon
 uv run main.py --debug "Call John Smith at 555-123-4567"  # + debug logging
 uv run main.py --optimize                                # optimize with GEPA (downloads dataset on first run)
 uv run main.py --evaluate                                # evaluate on 500 held-out examples via dspy.Evaluate
+uv run main.py --evaluate --randomize                    # evaluate on randomly sampled examples
 ```
 
 ## Tests
@@ -60,7 +61,7 @@ uv run pre-commit run --all-files   # manual run
 - `examples.py` — 25 few-shot `dspy.Example` instances
 - `tests/unit/` — structural tests (examples validation, label coverage, data model, CLI/logging, optimizer)
 - `tests/integration/` — live redaction tests (require API key)
-- `.env` — `GOOGLE_API_KEY`, `DSPY_MODEL`, `GEPA_REFLECTION_MODEL` (gitignored)
+- `.env` — `GOOGLE_API_KEY`, `DSPY_MODEL`, `GEPA_REFLECTION_MODEL`, `EVALUATE_SEED` (gitignored)
 - `.pre-commit-config.yaml` — ruff lint + format hooks
 - `data/` — cached HuggingFace dataset (gitignored, created by `--optimize`)
 - `optimized_model/` — saved optimized model state (gitignored, created by `--optimize`)

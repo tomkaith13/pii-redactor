@@ -52,3 +52,66 @@ class TestPrepareEvalExamples:
         ds = self._make_dataset(2000)
         prepare_eval_examples(ds, eval_size=100)
         ds.select.assert_called_once_with(range(1000, 1100))
+
+
+class TestPrepareEvalExamplesRandomize:
+    def _make_dataset(self, n):
+        rows = [
+            {"source_text": f"text {i}", "target_text": f"redacted {i}"}
+            for i in range(n)
+        ]
+        mock_ds = MagicMock()
+        mock_ds.select.return_value = rows
+        mock_ds.__len__ = lambda self: n
+        return mock_ds
+
+    def test_randomize_selects_correct_count(self, monkeypatch):
+        monkeypatch.setenv("OPTIMIZE_TRAIN_SIZE", "100")
+        monkeypatch.setenv("OPTIMIZE_VAL_SIZE", "50")
+        monkeypatch.delenv("EVALUATE_SEED", raising=False)
+        ds = self._make_dataset(1000)
+        prepare_eval_examples(ds, eval_size=50, randomize=True)
+        indices = ds.select.call_args[0][0]
+        assert len(indices) == 50
+
+    def test_randomize_excludes_optimization_indices(self, monkeypatch):
+        monkeypatch.setenv("OPTIMIZE_TRAIN_SIZE", "200")
+        monkeypatch.setenv("OPTIMIZE_VAL_SIZE", "100")
+        monkeypatch.delenv("EVALUATE_SEED", raising=False)
+        ds = self._make_dataset(1000)
+        prepare_eval_examples(ds, eval_size=100, randomize=True)
+        indices = ds.select.call_args[0][0]
+        assert all(i >= 300 for i in indices)
+
+    def test_randomize_indices_are_sorted(self, monkeypatch):
+        monkeypatch.setenv("OPTIMIZE_TRAIN_SIZE", "100")
+        monkeypatch.setenv("OPTIMIZE_VAL_SIZE", "50")
+        monkeypatch.delenv("EVALUATE_SEED", raising=False)
+        ds = self._make_dataset(1000)
+        prepare_eval_examples(ds, eval_size=200, randomize=True)
+        indices = ds.select.call_args[0][0]
+        assert indices == sorted(indices)
+
+    def test_randomize_seed_reproducible(self, monkeypatch):
+        monkeypatch.setenv("OPTIMIZE_TRAIN_SIZE", "100")
+        monkeypatch.setenv("OPTIMIZE_VAL_SIZE", "50")
+        monkeypatch.setenv("EVALUATE_SEED", "42")
+        ds1 = self._make_dataset(1000)
+        prepare_eval_examples(ds1, eval_size=50, randomize=True)
+        indices1 = ds1.select.call_args[0][0]
+
+        ds2 = self._make_dataset(1000)
+        prepare_eval_examples(ds2, eval_size=50, randomize=True)
+        indices2 = ds2.select.call_args[0][0]
+
+        assert indices1 == indices2
+
+    def test_randomize_caps_at_pool_size(self, monkeypatch):
+        monkeypatch.setenv("OPTIMIZE_TRAIN_SIZE", "80")
+        monkeypatch.setenv("OPTIMIZE_VAL_SIZE", "20")
+        monkeypatch.delenv("EVALUATE_SEED", raising=False)
+        ds = self._make_dataset(120)
+        # Pool is 120-100=20, but we ask for 50
+        prepare_eval_examples(ds, eval_size=50, randomize=True)
+        indices = ds.select.call_args[0][0]
+        assert len(indices) == 20
