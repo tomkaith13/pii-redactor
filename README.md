@@ -31,7 +31,7 @@ uv run main.py "Call John Smith at 555-123-4567"
 uv run main.py -v "Call John Smith at 555-123-4567"       # + DSPy prompt/response history
 uv run main.py --debug "Call John Smith at 555-123-4567"  # + debug logging
 uv run main.py --optimize                                # optimize with GEPA (downloads dataset on first run)
-uv run main.py --evaluate                                # evaluate on 500 held-out examples via dspy.Evaluate
+uv run main.py --evaluate                                # evaluate on held-out examples via dspy.Evaluate
 ```
 
 ## Tests
@@ -60,20 +60,20 @@ GEPA optimization on 5500 English samples from ai4privacy/pii-masking-300k (5000
 | Token-level F1 (val) | **93.75%** | $1.12 ($1.04 student + $0.08 reflection) |
 
 - Student model: Gemini 2.0 Flash (`gemini/gemini-2.0-flash`)
-- Reflection model: Gemini 2.5 Flash (`gemini/gemini-2.5-flash`)
+- Reflection model: Gemini 3 Flash (`gemini/gemini-3-flash-preview`)
 - Optimizer: DSPy GEPA (`auto="medium"`, 4 threads)
 - Best program found at iteration 7
 
 ## Evaluation Results
 
-Held-out evaluation on 500 examples (disjoint from optimization train/val split):
+Held-out evaluation on 3000 examples (disjoint from optimization train/val split):
 
 | Metric | Score | Cost |
 |--------|-------|------|
-| Token-level F1 | **93.84%** | $0.10 |
+| Token-level F1 | **93.35%** | $0.86 |
 
 - Model: Gemini 2.0 Flash (`gemini/gemini-2.0-flash`)
-- Eval set: 500 examples at offset 500 from the HF dataset
+- Eval set: 3000 examples at offset 6000 from the HF dataset
 - 20 threads, optimized model
 
 ## Project structure

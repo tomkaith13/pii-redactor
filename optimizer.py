@@ -76,7 +76,7 @@ def pii_metric(
 
     if score == 1.0:
         feedback = "Correct. The redacted text matches exactly."
-    elif score > 0.8:
+    elif score > 0.85:
         feedback = (
             f"Close (F1={score:.2f}). Minor differences.\n"
             f"Expected:\n{gold.redacted_text}\n\nGot:\n{pred.redacted_text}"
@@ -125,7 +125,7 @@ def optimize(api_key: str, model: str, reflection_model: str | None = None) -> N
         metric=pii_metric,
         auto="medium",
         reflection_lm=reflection_lm,
-        num_threads=4,
+        num_threads=20,
         track_stats=True,
         add_format_failure_as_feedback=True,
     )
