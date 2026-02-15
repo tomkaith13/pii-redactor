@@ -6,7 +6,7 @@ from typing import Any
 from pathlib import Path
 
 import dspy
-from datasets import Dataset, load_dataset
+from datasets import Dataset, load_dataset, load_from_disk
 from dspy.evaluate.metrics import f1_score
 
 from examples import FEWSHOT_ROW_IDS
@@ -15,15 +15,26 @@ from redactor import PIIRedactor
 logger = logging.getLogger(__name__)
 
 DATASET_DIR = "./data/ai4privacy"
+PROCESSED_DATASET_DIR = "./data/ai4privacy_processed"
 OPTIMIZED_MODEL_PATH = "./optimized_model/pii_redactor.json"
 
 
-def download_dataset(data_dir: str = DATASET_DIR) -> Dataset:
+def download_dataset(
+    data_dir: str = DATASET_DIR,
+    processed_dir: str = PROCESSED_DATASET_DIR,
+) -> Dataset:
     """Download ai4privacy/pii-masking-300k if not cached locally.
 
-    Returns the English-only train split.
+    Returns the English-only train split with few-shot rows excluded.
+    On first call, downloads from HF Hub, filters, and saves the processed
+    dataset to disk.  Subsequent calls load directly from disk without
+    contacting HF Hub.
     """
-    logger.info("Loading dataset (cache_dir=%s)...", data_dir)
+    if Path(processed_dir).exists():
+        logger.info("Loading processed dataset from %s", processed_dir)
+        return load_from_disk(processed_dir)
+
+    logger.info("Downloading dataset from HF Hub (cache_dir=%s)...", data_dir)
     ds = load_dataset(
         "ai4privacy/pii-masking-300k",
         split="train",
@@ -39,6 +50,8 @@ def download_dataset(data_dir: str = DATASET_DIR) -> Dataset:
         len(english) - len(filtered),
         len(filtered),
     )
+    filtered.save_to_disk(processed_dir)
+    logger.info("Saved processed dataset to %s", processed_dir)
     return filtered
 
 
