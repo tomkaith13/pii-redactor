@@ -1,6 +1,7 @@
 import logging
 import os
 import random
+from datetime import datetime
 
 import dspy
 from datasets import Dataset
@@ -89,12 +90,44 @@ def evaluate(api_key: str, model: str, randomize: bool = False) -> float:
         metric=lambda gold, pred, **kw: pii_metric(gold, pred, **kw).score,
         num_threads=20,
         display_progress=True,
-        display_table=5,
+        display_table=0,
     )
     result = evaluator(redactor)
     score = result.score if hasattr(result, "score") else float(result)
-    logger.info("Evaluation score: %.2f", score)
-
     cost = _sum_lm_cost(lm)
+
+    logger.info("Evaluation score: %.2f", score)
     logger.info("Evaluation cost: $%.4f", cost)
+
+    if os.environ.get("GENERATE_LOGS", "").lower() in ("1", "true", "yes"):
+        _write_eval_log(result, score, cost)
+
     return score
+
+
+def _write_eval_log(result, score: float, cost: float) -> None:
+    """Write per-example evaluation results to a timestamped log file."""
+    os.makedirs("logs", exist_ok=True)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    path = f"logs/evaluation_{timestamp}.log"
+
+    sep = "=" * 80
+    lines: list[str] = []
+    for i, (example, prediction, ex_score) in enumerate(result.results, 1):
+        lines.append(sep)
+        lines.append(f"Example {i}/{len(result.results)}  |  Score: {ex_score:.3f}")
+        lines.append("-" * 80)
+        lines.append(f"TEXT: {example.text}")
+        lines.append(f"GOLD: {example.redacted_text}")
+        lines.append(f"PRED: {prediction.redacted_text}")
+        lines.append("")
+
+    lines.append(sep)
+    lines.append(f"OVERALL SCORE: {score:.2f}%  ({len(result.results)} examples)")
+    lines.append(f"COST: ${cost:.4f}")
+    lines.append(sep)
+
+    with open(path, "w") as f:
+        f.write("\n".join(lines) + "\n")
+
+    logger.info("Evaluation log written to %s", path)
