@@ -9,6 +9,7 @@ import dspy
 from datasets import Dataset, load_dataset
 from dspy.evaluate.metrics import f1_score
 
+from examples import FEWSHOT_ROW_IDS
 from redactor import PIIRedactor
 
 logger = logging.getLogger(__name__)
@@ -30,7 +31,15 @@ def download_dataset(data_dir: str = DATASET_DIR) -> Dataset:
     )
     english = ds.filter(lambda row: row["language"] == "English")
     logger.info("Filtered to %d English samples", len(english))
-    return english
+    # Exclude few-shot demo rows to prevent data leakage
+    excluded = FEWSHOT_ROW_IDS
+    filtered = english.filter(lambda row: row["id"] not in excluded)
+    logger.info(
+        "Excluded %d few-shot rows, %d remaining",
+        len(english) - len(filtered),
+        len(filtered),
+    )
+    return filtered
 
 
 def prepare_examples(

@@ -11,10 +11,10 @@ class IdentifyPII(dspy.Signature):
     """Identify all PII entities in the text and produce a redacted version.
 
     Use these labels (from ai4privacy/pii-masking-300k):
-    Names: GIVENNAME1, GIVENNAME2, LASTNAME1, LASTNAME2, TITLE
+    Names: GIVENNAME1, GIVENNAME2, LASTNAME1, LASTNAME2, LASTNAME3, TITLE
     Contact: TEL, EMAIL, USERNAME
     IDs: SOCIALNUMBER, IDCARD, DRIVERLICENSE, PASSPORT
-    Location: STREET, BUILDING, CITY, STATE, POSTCODE, COUNTRY, SECADDRESS
+    Location: STREET, BUILDING, CITY, STATE, POSTCODE, COUNTRY, SECADDRESS, GEOCOORD
     Personal: SEX, BOD, PASS
     Digital: IP
     Time: DATE, TIME
