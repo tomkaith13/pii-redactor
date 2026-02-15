@@ -1,5 +1,7 @@
 import logging
 import os
+import re
+from collections import Counter
 from typing import Any
 from pathlib import Path
 
@@ -59,6 +61,96 @@ def prepare_examples(
     return trainset, valset
 
 
+PII_LABEL_RE = re.compile(r"\[([A-Z]+\d*)\]")
+
+
+def extract_pii_labels(text: str) -> list[str]:
+    """Extract all PII label tokens (e.g. GIVENNAME1, TEL) from redacted text."""
+    return PII_LABEL_RE.findall(text)
+
+
+def pii_only_f1(gold_text: str, pred_text: str) -> tuple[float, float, float]:
+    """Compute precision, recall, and F1 on PII label tokens only.
+
+    Extracts [LABEL] tokens from both texts and computes multiset-based
+    precision, recall, and F1.  Ignores surrounding non-PII text entirely,
+    so the score reflects actual redaction quality rather than boilerplate
+    text matching.
+
+    Returns (precision, recall, f1).
+    """
+    gold_labels = extract_pii_labels(gold_text)
+    pred_labels = extract_pii_labels(pred_text)
+
+    if not gold_labels and not pred_labels:
+        return 1.0, 1.0, 1.0
+    if not gold_labels or not pred_labels:
+        return 0.0, 0.0, 0.0
+
+    gold_counts = Counter(gold_labels)
+    pred_counts = Counter(pred_labels)
+
+    tp = sum((gold_counts & pred_counts).values())
+    fp = sum((pred_counts - gold_counts).values())
+    fn = sum((gold_counts - pred_counts).values())
+
+    precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
+    recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+
+    if precision + recall == 0:
+        return 0.0, 0.0, 0.0
+
+    f1 = 2 * precision * recall / (precision + recall)
+    return precision, recall, f1
+
+
+def _build_feedback(
+    gold_text: str, pred_text: str, precision: float, recall: float, f1: float
+) -> str:
+    """Build detailed, actionable feedback for GEPA reflection.
+
+    Instead of generic "close" / "incorrect" messages, this tells the
+    optimizer exactly which PII labels were missed, which were falsely
+    added, and which label types were confused.
+    """
+    if f1 == 1.0 and gold_text.strip() == pred_text.strip():
+        return "Correct. All PII entities detected with correct labels."
+
+    gold_labels = extract_pii_labels(gold_text)
+    pred_labels = extract_pii_labels(pred_text)
+    gold_counts = Counter(gold_labels)
+    pred_counts = Counter(pred_labels)
+
+    missed = gold_counts - pred_counts
+    extra = pred_counts - gold_counts
+
+    parts = [f"PII-only F1={f1:.2f} (precision={precision:.2f}, recall={recall:.2f})."]
+
+    if missed:
+        missed_items = [
+            f"{label} (x{count})" if count > 1 else label
+            for label, count in missed.items()
+        ]
+        parts.append(f"Missed PII labels (false negatives): {', '.join(missed_items)}.")
+
+    if extra:
+        extra_items = [
+            f"{label} (x{count})" if count > 1 else label
+            for label, count in extra.items()
+        ]
+        parts.append(f"Extra PII labels (false positives): {', '.join(extra_items)}.")
+
+    if f1 == 1.0 and gold_text.strip() != pred_text.strip():
+        parts.append("All PII labels match, but surrounding text differs.")
+
+    text_f1 = f1_score(pred_text.strip(), gold_text.strip())
+    parts.append(f"Full-text token F1={text_f1:.2f} (for reference).")
+
+    parts.append(f"\nExpected:\n{gold_text}\n\nGot:\n{pred_text}")
+
+    return " ".join(parts)
+
+
 def pii_metric(
     gold: dspy.Example,
     pred: dspy.Prediction,
@@ -66,28 +158,23 @@ def pii_metric(
     pred_name: str | None = None,
     pred_trace: Any | None = None,
 ) -> dspy.Prediction:
-    """Token-level F1 metric with feedback for GEPA.
+    """PII-only F1 metric with detailed feedback for GEPA.
 
-    Compares pred.redacted_text to gold.redacted_text using token-level F1,
-    giving partial credit for partially correct redactions.
+    Computes F1 exclusively on [LABEL] tokens extracted from the redacted
+    text, so the score reflects entity detection quality rather than being
+    inflated by matching non-PII boilerplate.  Feedback enumerates specific
+    missed and falsely-added labels to give GEPA actionable reflection
+    signals.
+
     Returns dspy.Prediction(score=float, feedback=str).
     """
-    score = f1_score(pred.redacted_text.strip(), gold.redacted_text.strip())
+    gold_text = gold.redacted_text.strip()
+    pred_text = pred.redacted_text.strip()
 
-    if score == 1.0:
-        feedback = "Correct. The redacted text matches exactly."
-    elif score > 0.85:
-        feedback = (
-            f"Close (F1={score:.2f}). Minor differences.\n"
-            f"Expected:\n{gold.redacted_text}\n\nGot:\n{pred.redacted_text}"
-        )
-    else:
-        feedback = (
-            f"Incorrect (F1={score:.2f}).\n"
-            f"Expected:\n{gold.redacted_text}\n\nGot:\n{pred.redacted_text}"
-        )
+    precision, recall, f1 = pii_only_f1(gold_text, pred_text)
+    feedback = _build_feedback(gold_text, pred_text, precision, recall, f1)
 
-    return dspy.Prediction(score=score, feedback=feedback)
+    return dspy.Prediction(score=f1, feedback=feedback)
 
 
 def _sum_lm_cost(lm: dspy.LM) -> float:
