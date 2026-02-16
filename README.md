@@ -52,7 +52,35 @@ Pre-commit hooks run ruff linting and formatting on every commit:
 uv run pre-commit run --all-files   # manual run
 ```
 
+## Metrics
+
+### Current: Hybrid PII Score
+
+`score = 0.75 × detection_recall + 0.25 × classification_accuracy`
+
+- **Detection recall** (label-agnostic): fraction of gold PII items redacted with any label. Over-redaction is acceptable — no precision penalty.
+- **Classification accuracy**: of the detected items, fraction with the exact correct label.
+
+GEPA feedback categorises errors by severity: **CRITICAL** for missed PII (under-redaction), **minor** for wrong labels on detected items.
+
+### Previous: Token-level F1
+
+Standard token-level F1 between predicted and gold redacted text. Treated all tokens equally, which diluted PII-specific signal with non-PII text matches.
+
 ## Optimization Results
+
+### Hybrid PII Score (current metric)
+
+Held-out evaluation on 1000 examples (disjoint from optimization train/val split):
+
+| Metric | Score | Cost |
+|--------|-------|------|
+| Hybrid PII Score | **91.87%** | $1.34 |
+
+- Model: Gemini 2.0 Flash (`gemini/gemini-2.0-flash`)
+- 20 threads, optimized model
+
+### Token-level F1 (previous metric)
 
 GEPA optimization on 5500 English samples from ai4privacy/pii-masking-300k (5000 train / 500 val):
 
@@ -66,6 +94,20 @@ GEPA optimization on 5500 English samples from ai4privacy/pii-masking-300k (5000
 - Best program found at iteration 7
 
 ## Evaluation Results
+
+### Hybrid PII Score (current metric)
+
+Held-out evaluation on 5000 examples (disjoint from optimization train/val split):
+
+| Metric | Score | Cost |
+|--------|-------|------|
+| Hybrid PII Score | **91.87%** | $1.34 |
+
+- Model: Gemini 2.0 Flash (`gemini/gemini-2.0-flash`)
+- Eval set: 5000 examples at offset 1200 from the HF dataset
+- 20 threads, optimized model
+
+### Token-level F1 (previous metric)
 
 Held-out evaluation on 3000 examples (disjoint from optimization train/val split):
 
