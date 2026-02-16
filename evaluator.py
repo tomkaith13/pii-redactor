@@ -100,12 +100,29 @@ def evaluate(api_key: str, model: str, randomize: bool = False) -> float:
     logger.info("Evaluation cost: $%.4f", cost)
 
     if os.environ.get("GENERATE_LOGS", "").lower() in ("1", "true", "yes"):
-        _write_eval_log(result, score, cost)
+        _write_eval_log(result, score, cost, lm)
 
     return score
 
 
-def _write_eval_log(result, score: float, cost: float) -> None:
+def _extract_prompt(lm: dspy.LM) -> str:
+    """Extract the prompt template from the first LM history entry."""
+    if not lm.history:
+        return "(no prompt history available)"
+
+    messages = lm.history[0].get("messages", [])
+    if not messages:
+        return "(no messages in history)"
+
+    parts: list[str] = []
+    for msg in messages:
+        role = msg.get("role", "unknown").upper()
+        content = msg.get("content", "")
+        parts.append(f"[{role}]\n{content}")
+    return "\n\n".join(parts)
+
+
+def _write_eval_log(result, score: float, cost: float, lm: dspy.LM) -> None:
     """Write per-example evaluation results to a timestamped log file."""
     os.makedirs("logs", exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -113,13 +130,24 @@ def _write_eval_log(result, score: float, cost: float) -> None:
 
     sep = "=" * 80
     lines: list[str] = []
+
+    # Write the prompt used at the top of the log
+    lines.append(sep)
+    lines.append("PROMPT USED (from first example)")
+    lines.append(sep)
+    lines.append(_extract_prompt(lm))
+    lines.append("")
+
     for i, (example, prediction, ex_score) in enumerate(result.results, 1):
         lines.append(sep)
         lines.append(f"Example {i}/{len(result.results)}  |  Score: {ex_score:.3f}")
         lines.append("-" * 80)
         lines.append(f"TEXT: {example.text}")
+        lines.append("-" * 80)
         lines.append(f"GOLD: {example.redacted_text}")
+        lines.append("-" * 80)
         lines.append(f"PRED: {prediction.redacted_text}")
+        lines.append("-" * 80)
         lines.append("")
 
     lines.append(sep)
